@@ -98,7 +98,7 @@ export default function FileList({
         <table className="w-full text-sm">
           <thead className="bg-surface-elevated border-b border-edge">
             <tr className="text-left text-content-muted">
-              <th className="w-10 px-3 py-2">
+              <th className="w-10 px-3 py-1">
                 <input
                   type="checkbox"
                   className="w-4 h-4 accent-primary cursor-pointer"
@@ -109,8 +109,8 @@ export default function FileList({
                   onChange={toggleAll}
                 />
               </th>
-              <th className="px-3 py-2 font-medium">이름</th>
-              <th className="w-20 px-3 py-2 font-medium">유형</th>
+              <th className="px-3 py-1 font-medium">이름</th>
+              <th className="w-20 px-3 py-1 font-medium">유형</th>
             </tr>
           </thead>
           <tbody>
@@ -125,7 +125,7 @@ export default function FileList({
                     ${isSelected ? "bg-primary/10" : "hover:bg-surface-hover"}`}
                   onClick={() => toggleSelection(item.name, item)}
                 >
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-1">
                     <input
                       type="checkbox"
                       className="w-4 h-4 accent-primary cursor-pointer"
@@ -134,7 +134,7 @@ export default function FileList({
                       onClick={(e) => e.stopPropagation()}
                     />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-1">
                     <div className="flex items-center gap-2">
                       <span className="text-content-muted">{item.type === "folder" ? "[DIR]" : ""}</span>
                       <span className={isSelected ? "text-content" : "text-content-secondary"}>
@@ -142,7 +142,7 @@ export default function FileList({
                       </span>
                     </div>
                   </td>
-                  <td className="px-3 py-2 text-content-muted">
+                  <td className="px-3 py-1 text-content-muted">
                     {item.type === "folder" ? "폴더" : "파일"}
                   </td>
                 </tr>

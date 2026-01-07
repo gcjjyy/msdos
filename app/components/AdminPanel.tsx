@@ -185,6 +185,40 @@ export default function AdminPanel() {
 
   const filteredTree = filterDeletedItems(tree);
 
+  const getSelectionCounts = () => {
+    let folders = 0;
+    let files = 0;
+
+    const topLevelPaths = getTopLevelPaths(selectedPaths);
+
+    const findItem = (items: FolderItem[], path: string): FolderItem | null => {
+      const parts = path.split("/");
+      let current = items;
+      for (let i = 0; i < parts.length; i++) {
+        const item = current.find((it) => it.name === parts[i]);
+        if (!item) return null;
+        if (i === parts.length - 1) return item;
+        if (item.type === "folder" && item.children) {
+          current = item.children;
+        } else {
+          return null;
+        }
+      }
+      return null;
+    };
+
+    for (const path of topLevelPaths) {
+      const item = findItem(filteredTree, path);
+      if (item) {
+        if (item.type === "folder") folders++;
+        else files++;
+      }
+    }
+    return { folders, files };
+  };
+
+  const selectionCounts = getSelectionCounts();
+
   return (
     <div className="flex-1 flex flex-col p-6 overflow-hidden">
       <div className="max-w-4xl w-full mx-auto flex flex-col flex-1 overflow-hidden space-y-4">
@@ -225,7 +259,9 @@ export default function AdminPanel() {
               onClick={handleDeleteSelected}
               className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-error/10 text-error-light border border-error/20 hover:bg-error/20 transition-colors"
             >
-              선택 삭제 ({selectedPaths.size})
+              선택 삭제 ({selectionCounts.folders > 0 && `폴더 ${selectionCounts.folders}`}
+              {selectionCounts.folders > 0 && selectionCounts.files > 0 && ", "}
+              {selectionCounts.files > 0 && `파일 ${selectionCounts.files}`})
             </button>
           )}
           <div className="flex-1" />
@@ -297,7 +333,14 @@ export default function AdminPanel() {
         <div className="flex-1 min-h-0 bg-surface-elevated border border-edge rounded-xl overflow-hidden flex flex-col">
           <div className="px-4 py-3 border-b border-edge flex items-center justify-between">
             <span className="text-sm font-medium text-content-secondary">파일 시스템</span>
-            {hasSelection && <span className="text-xs text-primary">{selectedPaths.size}개 선택됨</span>}
+            {hasSelection && (
+              <span className="text-xs text-primary">
+                {selectionCounts.folders > 0 && `폴더 ${selectionCounts.folders}`}
+                {selectionCounts.folders > 0 && selectionCounts.files > 0 && ", "}
+                {selectionCounts.files > 0 && `파일 ${selectionCounts.files}`}
+                {" 선택됨"}
+              </span>
+            )}
           </div>
           {loading ? (
             <div className="flex items-center justify-center p-6 text-content-muted">
