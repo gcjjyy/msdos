@@ -55,3 +55,19 @@
     animation: spin 0.8s linear infinite;
   }
 }
+
+/* js-dos 캔버스 중앙 배치 스타일 */
+.dos-emulator-wrapper.dos-fixed-canvas .emulator-root {
+  position: relative;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.dos-emulator-wrapper.dos-fixed-canvas .emulator-canvas {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: var(--dos-canvas-width) !important;
+  height: var(--dos-canvas-height) !important;
+}

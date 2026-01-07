@@ -44,15 +44,12 @@ export default function DosboxPage() {
 
       {/* DOSBox Tab - always mounted, hidden when not active */}
       <div className={`flex-1 flex flex-col overflow-hidden ${activeTab !== "dosbox" ? "hidden" : ""}`}>
-        <div className={`flex-1 flex items-center justify-center bg-surface ${isFullscreen ? "" : "p-6"}`}>
-          <div className={`overflow-hidden ${isFullscreen ? "w-full h-full" : "rounded-xl border border-edge"}`}>
-            <DosEmulator
-              bundleUrl="/bundle.jsdos"
-              width={dimensions?.width}
-              height={dimensions?.height}
-              fullscreen={isFullscreen}
-            />
-          </div>
+        <div className="flex-1 bg-surface">
+          <DosEmulator
+            bundleUrl="/bundle.jsdos"
+            canvasWidth={isFullscreen ? undefined : dimensions?.width}
+            canvasHeight={isFullscreen ? undefined : dimensions?.height}
+          />
         </div>
       </div>
 

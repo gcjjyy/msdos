@@ -15,16 +15,14 @@ declare global {
 
 interface DosEmulatorProps {
   bundleUrl: string;
-  width?: number;
-  height?: number;
-  fullscreen?: boolean;
+  canvasWidth?: number;
+  canvasHeight?: number;
 }
 
 export default function DosEmulator({
   bundleUrl,
-  width = 640,
-  height = 480,
-  fullscreen = false,
+  canvasWidth,
+  canvasHeight,
 }: DosEmulatorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -69,21 +67,25 @@ export default function DosEmulator({
 
   if (!isClient) return null;
 
-  const style = fullscreen
-    ? { width: "100%", height: "100%" }
-    : { width: `${width}px`, height: `${height}px` };
-
   if (status === "error") {
     return (
-      <div style={style} className="flex items-center justify-center bg-surface-elevated">
+      <div className="w-full h-full flex items-center justify-center bg-surface-elevated">
         <p className="text-error-light p-6">{errorMsg}</p>
       </div>
     );
   }
 
+  // CSS 변수로 캔버스 크기 전달
+  const cssVars = canvasWidth && canvasHeight
+    ? { "--dos-canvas-width": `${canvasWidth}px`, "--dos-canvas-height": `${canvasHeight}px` } as React.CSSProperties
+    : undefined;
+
   return (
-    <div style={style} className="bg-black">
-      <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
+    <div
+      className={`w-full h-full bg-black dos-emulator-wrapper ${canvasWidth ? "dos-fixed-canvas" : ""}`}
+      style={cssVars}
+    >
+      <div ref={containerRef} className="w-full h-full" />
     </div>
   );
 }

@@ -15,7 +15,7 @@ export default function Navbar({ activeTab, onTabChange, rightContent }: NavbarP
   ];
 
   return (
-    <nav className="flex items-center bg-surface-elevated border-b border-edge">
+    <nav className="flex items-center bg-surface-elevated border-b border-edge relative z-50">
       <div className="flex">
         {tabs.map((tab) => (
           <button
