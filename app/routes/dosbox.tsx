@@ -1,7 +1,10 @@
+import { useState } from "react";
 import DosEmulator from "~/components/DosEmulator";
 import Navbar from "~/components/Navbar";
 import CanvasSizeSelector from "~/components/CanvasSizeSelector";
+import AdminPanel from "~/components/AdminPanel";
 import { useCanvasSize } from "~/lib/useCanvasSize";
+import { useIsClient } from "~/lib/useIsClient";
 
 export function meta() {
   return [
@@ -16,29 +19,46 @@ const SIZE_MAP: Record<string, { width: number; height: number }> = {
   "1024x768": { width: 1024, height: 768 },
 };
 
+type Tab = "dosbox" | "admin";
+
 export default function DosboxPage() {
   const { size, setSize, isClient } = useCanvasSize();
+  const isClientReady = useIsClient();
+  const [activeTab, setActiveTab] = useState<Tab>("dosbox");
   const isFullscreen = size === "fullscreen";
   const dimensions = SIZE_MAP[size];
 
+  if (!isClientReady) return null;
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <div className="flex items-center justify-between px-6 py-3 bg-surface-elevated border-b border-edge">
-        <div className="text-sm text-content-muted">
-          {isClient && <span>{size === "fullscreen" ? "전체 화면" : size}</span>}
+    <div className="flex flex-col h-screen overflow-hidden">
+      <Navbar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        rightContent={
+          activeTab === "dosbox" && isClient && (
+            <CanvasSizeSelector size={size} onChange={setSize} />
+          )
+        }
+      />
+
+      {/* DOSBox Tab - always mounted, hidden when not active */}
+      <div className={`flex-1 flex flex-col overflow-hidden ${activeTab !== "dosbox" ? "hidden" : ""}`}>
+        <div className={`flex-1 flex items-center justify-center bg-surface ${isFullscreen ? "" : "p-6"}`}>
+          <div className={`overflow-hidden ${isFullscreen ? "w-full h-full" : "rounded-xl border border-edge"}`}>
+            <DosEmulator
+              bundleUrl="/bundle.jsdos"
+              width={dimensions?.width}
+              height={dimensions?.height}
+              fullscreen={isFullscreen}
+            />
+          </div>
         </div>
-        {isClient && <CanvasSizeSelector size={size} onChange={setSize} />}
       </div>
-      <div className={`flex-1 flex items-center justify-center bg-surface ${isFullscreen ? "" : "p-6"}`}>
-        <div className={`overflow-hidden ${isFullscreen ? "w-full h-full" : "rounded-xl border border-edge"}`}>
-          <DosEmulator
-            bundleUrl="/bundle.jsdos"
-            width={dimensions?.width}
-            height={dimensions?.height}
-            fullscreen={isFullscreen}
-          />
-        </div>
+
+      {/* Admin Tab - always mounted, hidden when not active */}
+      <div className={`flex-1 flex flex-col overflow-hidden ${activeTab !== "admin" ? "hidden" : ""}`}>
+        <AdminPanel />
       </div>
     </div>
   );
