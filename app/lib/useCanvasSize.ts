@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 export type CanvasSize = "640x480" | "800x600" | "1024x768" | "fullscreen";
 
 const STORAGE_KEY = "dosbox-canvas-size";
-const DEFAULT_SIZE: CanvasSize = "640x480";
+const DEFAULT_SIZE: CanvasSize = "800x600";
 
 export function useCanvasSize() {
   const [size, setSize] = useState<CanvasSize>(DEFAULT_SIZE);
