@@ -3,6 +3,7 @@ import { type FolderItem } from "~/components/FolderTree";
 import DirectoryTree from "~/components/DirectoryTree";
 import FileList from "~/components/FileList";
 import { validateFolder } from "~/lib/validation";
+import { useIsMobile } from "~/lib/useIsMobile";
 
 interface PendingFolder {
   name: string;
@@ -25,6 +26,7 @@ export default function AdminPanel() {
   const [applyStatus, setApplyStatus] = useState<ApplyStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   const hasChanges = pendingDeletions.size > 0 || pendingAdditions.length > 0;
   const hasInvalidAdditions = pendingAdditions.some((f) => !f.valid);
@@ -220,7 +222,7 @@ export default function AdminPanel() {
   const selectionCounts = getSelectionCounts();
 
   return (
-    <div className="flex-1 flex flex-col p-6 overflow-hidden">
+    <div className={`flex-1 flex flex-col overflow-hidden ${isMobile ? "p-4" : "p-6"}`}>
       <div className="max-w-4xl w-full mx-auto flex flex-col flex-1 overflow-hidden space-y-4">
         <div className="flex-shrink-0">
           <h1 className="text-2xl font-semibold text-content">파일 관리</h1>
@@ -350,8 +352,8 @@ export default function AdminPanel() {
           ) : filteredTree.length === 0 ? (
             <div className="text-center p-6 text-content-muted">폴더가 없습니다</div>
           ) : (
-            <div className="flex flex-1 min-h-0">
-              <div className="w-72 border-r border-edge p-3 bg-surface/50 overflow-auto">
+            <div className={`flex flex-1 min-h-0 ${isMobile ? "flex-col" : ""}`}>
+              <div className={`${isMobile ? "h-48 border-b" : "w-72 border-r"} border-edge p-3 bg-surface/50 overflow-auto`}>
                 <DirectoryTree
                   items={filteredTree}
                   selectedPath={currentPath}
