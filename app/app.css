@@ -1,0 +1,57 @@
+/* Tailwind with Preflight */
+@import "tailwindcss";
+
+/* Custom theme */
+@theme {
+  --color-surface: #0f0f10;
+  --color-surface-elevated: #1a1a1c;
+  --color-surface-hover: #252528;
+  --color-edge: #2e2e32;
+  --color-content: #e4e4e7;
+  --color-content-secondary: #a1a1aa;
+  --color-content-muted: #71717a;
+  --color-primary: #10b981;
+  --color-primary-hover: #059669;
+  --color-error: #ef4444;
+  --color-error-light: #fca5a5;
+}
+
+/* Base styles - @layer base로 Tailwind utilities보다 낮은 우선순위 */
+@layer base {
+  html, body {
+    min-height: 100vh;
+    background-color: var(--color-surface);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-surface-elevated);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-surface-hover);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3f3f46;
+  }
+}
+
+/* Loading spinner - components layer */
+@layer components {
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--color-surface-hover);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+}
