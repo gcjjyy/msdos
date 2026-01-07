@@ -5,6 +5,7 @@ import CanvasSizeSelector from "~/components/CanvasSizeSelector";
 import AdminPanel from "~/components/AdminPanel";
 import { useCanvasSize } from "~/lib/useCanvasSize";
 import { useIsClient } from "~/lib/useIsClient";
+import { useIsMobile } from "~/lib/useIsMobile";
 
 export function meta() {
   return [
@@ -24,9 +25,13 @@ type Tab = "dosbox" | "admin";
 export default function DosboxPage() {
   const { size, setSize, isClient } = useCanvasSize();
   const isClientReady = useIsClient();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<Tab>("dosbox");
-  const isFullscreen = size === "fullscreen";
-  const dimensions = SIZE_MAP[size];
+
+  // 모바일에서는 항상 fullscreen
+  const effectiveSize = isMobile ? "fullscreen" : size;
+  const isFullscreen = effectiveSize === "fullscreen";
+  const dimensions = SIZE_MAP[effectiveSize];
 
   if (!isClientReady) return null;
 
@@ -36,7 +41,7 @@ export default function DosboxPage() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         rightContent={
-          activeTab === "dosbox" && isClient && (
+          activeTab === "dosbox" && isClient && !isMobile && (
             <CanvasSizeSelector size={size} onChange={setSize} />
           )
         }

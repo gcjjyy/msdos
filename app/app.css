@@ -71,3 +71,12 @@
   width: var(--dos-canvas-width) !important;
   height: var(--dos-canvas-height) !important;
 }
+
+/* js-dos 키보드는 화면 하단 전체에 표시 */
+.dos-emulator-wrapper .emulator-keyboard {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1000 !important;
+}
