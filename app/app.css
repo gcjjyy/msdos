@@ -80,3 +80,125 @@
   right: 0 !important;
   z-index: 1000 !important;
 }
+
+/* js-dos 기본 로딩 UI 숨기기 */
+.dos-emulator-wrapper .emulator-loading {
+  display: none !important;
+}
+
+/* 커스텀 DOS 부팅 로딩 화면 */
+.dos-boot-screen {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.dos-boot-box {
+  width: 640px;
+  height: 480px;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  padding: 1.5rem;
+}
+
+.dos-boot-messages {
+  color: #aaa;
+  font-size: 14px;
+  line-height: 1.8;
+  text-align: left;
+  flex: 1;
+  overflow: hidden;
+}
+
+.dos-boot-line {
+  opacity: 0;
+  animation: bootLineAppear 0.1s ease forwards;
+}
+
+.dos-boot-line.ok {
+  color: #4ade80;
+}
+
+.dos-boot-line.highlight {
+  color: #fff;
+}
+
+@keyframes bootLineAppear {
+  to {
+    opacity: 1;
+  }
+}
+
+/* 모던 프로그레스 바 컨테이너 */
+.dos-progress-container {
+  width: 100%;
+  flex-shrink: 0;
+  padding-top: 1rem;
+}
+
+.dos-progress-label {
+  color: #888;
+  font-size: 12px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.dos-progress-bar {
+  height: 6px;
+  background: #1a1a1a;
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.dos-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.dos-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* 로딩 완료 시 페이드아웃 */
+.dos-boot-screen.fade-out {
+  animation: fadeOut 0.5s ease forwards;
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
