@@ -1,4 +1,5 @@
 // API for applying changes (add/delete) with password verification
+import "dotenv/config";
 import { join, dirname } from "path";
 import { mkdir, writeFile, rm } from "fs/promises";
 import { buildBundle, getDosDir } from "~/lib/build-bundle.server";
