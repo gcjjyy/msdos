@@ -4,3 +4,4 @@ build/
 .react-router/
 public/bundle.jsdos
 dos/
+dos_original/
