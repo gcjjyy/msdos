@@ -6,4 +6,5 @@ export default [
   route("api/bundle", "routes/api.bundle.ts"),
   route("api/folders", "routes/api.folders.ts"),
   route("api/apply", "routes/api.apply.ts"),
+  route("api/sync", "routes/api.sync.ts"),
 ] satisfies RouteConfig;

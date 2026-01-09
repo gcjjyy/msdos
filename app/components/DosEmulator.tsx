@@ -1,15 +1,37 @@
 import { useEffect, useRef, useState } from "react";
 import { useIsClient } from "~/lib/useIsClient";
 
+// FsNode from js-dos
+export interface FsNode {
+  name: string;
+  size?: number;
+  nodes?: FsNode[];
+}
+
+// CommandInterface from js-dos
+export interface CommandInterface {
+  persist(onlyChanges?: boolean): Promise<Uint8Array | null>;
+  fsTree(): Promise<FsNode>;
+  fsReadFile(file: string): Promise<Uint8Array>;
+  screenshot(): Promise<ImageData>;
+  pause(): void;
+  resume(): void;
+  mute(): void;
+  unmute(): void;
+  exit(): void;
+}
+
 declare global {
   interface Window {
     Dos: (
       element: HTMLElement,
       options?: Record<string, unknown>
-    ) => { run: (bundleUrl: string) => Promise<unknown> };
+    ) => { run: (bundleUrl: string) => Promise<CommandInterface> };
     emulators: {
       pathPrefix: string;
     };
+    // 전역에서 접근 가능한 CommandInterface
+    dosCI?: CommandInterface;
   }
 }
 
@@ -126,7 +148,9 @@ export default function DosEmulator({
     const initEmulator = async () => {
       try {
         simulateProgress();
-        await window.Dos(container, {}).run(bundleUrl);
+        const ci = await window.Dos(container, {}).run(bundleUrl);
+        // CommandInterface를 전역에 저장하여 다른 컴포넌트에서 접근 가능하게 함
+        window.dosCI = ci;
 
         // 로딩 완료 시 100%로 설정 후 페이드아웃
         clearInterval(progressInterval);
@@ -150,6 +174,11 @@ export default function DosEmulator({
 
     return () => {
       clearInterval(progressInterval);
+      // CI 정리
+      if (window.dosCI) {
+        window.dosCI.exit();
+        delete window.dosCI;
+      }
       if (container) {
         container.innerHTML = "";
       }

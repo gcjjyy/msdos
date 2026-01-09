@@ -13,6 +13,7 @@ interface PendingFolder {
 }
 
 type ApplyStatus = "idle" | "applying" | "success" | "error";
+type SyncStatus = "idle" | "syncing" | "success" | "error";
 
 export default function AdminPanel() {
   const [tree, setTree] = useState<FolderItem[]>([]);
@@ -22,8 +23,10 @@ export default function AdminPanel() {
   const [pendingDeletions, setPendingDeletions] = useState<Set<string>>(new Set());
   const [pendingAdditions, setPendingAdditions] = useState<PendingFolder[]>([]);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showSyncModal, setShowSyncModal] = useState(false);
   const [password, setPassword] = useState("");
   const [applyStatus, setApplyStatus] = useState<ApplyStatus>("idle");
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
@@ -86,6 +89,86 @@ export default function AdminPanel() {
   };
 
   const handleAddFolder = () => fileInputRef.current?.click();
+
+  const handleSyncClick = () => {
+    if (!window.dosCI) {
+      setStatusMessage("에뮬레이터가 실행 중이 아닙니다. DOSBox 탭으로 이동하여 에뮬레이터를 실행해주세요.");
+      setSyncStatus("error");
+      setTimeout(() => {
+        setSyncStatus("idle");
+        setStatusMessage("");
+      }, 3000);
+      return;
+    }
+    setShowSyncModal(true);
+    setPassword("");
+    setSyncStatus("idle");
+  };
+
+  const handleSync = async () => {
+    if (!window.dosCI) {
+      setSyncStatus("error");
+      setStatusMessage("에뮬레이터가 실행 중이 아닙니다.");
+      return;
+    }
+
+    setSyncStatus("syncing");
+    setStatusMessage("에뮬레이터에서 파일시스템 추출 중...");
+
+    try {
+      // Request filesystem pack first (triggers internal save)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ci = window.dosCI as any;
+      if (ci.transport?.sendMessageToServer) {
+        ci.transport.sendMessageToServer("wc-pack-fs-to-bundle", {});
+      }
+
+      // Wait for pack to complete
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Now get the packed filesystem
+      const bundleData = await window.dosCI.persist();
+
+      if (!bundleData) {
+        setSyncStatus("error");
+        setStatusMessage("파일시스템을 추출할 수 없습니다.");
+        return;
+      }
+
+      setStatusMessage("서버에 동기화 중...");
+
+      // Send to server
+      const formData = new FormData();
+      formData.append("password", password);
+      formData.append("bundle", new Blob([new Uint8Array(bundleData)], { type: "application/zip" }), "bundle.zip");
+
+      const response = await fetch("/api/sync", { method: "POST", body: formData });
+      const result = await response.json();
+
+      if (result.success) {
+        setSyncStatus("success");
+        setStatusMessage(`동기화 완료! ${result.fileCount}개 파일 동기화됨`);
+        setShowSyncModal(false);
+        fetchTree();
+        setTimeout(() => {
+          setSyncStatus("idle");
+          setStatusMessage("");
+        }, 3000);
+      } else {
+        setSyncStatus("error");
+        setStatusMessage(result.error || "동기화 실패");
+      }
+    } catch (error) {
+      setSyncStatus("error");
+      setStatusMessage(error instanceof Error ? error.message : "네트워크 오류");
+    }
+  };
+
+  const handleCancelSyncModal = () => {
+    setShowSyncModal(false);
+    setPassword("");
+    setSyncStatus("idle");
+  };
 
   const handleFolderSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -231,7 +314,7 @@ export default function AdminPanel() {
 
         {statusMessage && (
           <div className={`flex-shrink-0 px-4 py-3 rounded-lg text-sm ${
-            applyStatus === "error"
+            applyStatus === "error" || syncStatus === "error"
               ? "bg-error/10 text-error-light border border-error/20"
               : "bg-primary/10 text-emerald-400 border border-primary/20"
           }`}>
@@ -266,6 +349,13 @@ export default function AdminPanel() {
               {selectionCounts.files > 0 && `파일 ${selectionCounts.files}`})
             </button>
           )}
+          <button
+            onClick={handleSyncClick}
+            disabled={syncStatus === "syncing"}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-blue-600/20 text-blue-400 border border-blue-600/30 hover:bg-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {syncStatus === "syncing" ? "동기화 중..." : "에뮬레이터 동기화"}
+          </button>
           <div className="flex-1" />
           <button
             onClick={handleApplyClick}
@@ -412,6 +502,54 @@ export default function AdminPanel() {
                     적용 중...
                   </span>
                 ) : "적용"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSyncModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface-elevated border border-edge rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold text-content mb-1">에뮬레이터 동기화</h2>
+            <p className="text-sm text-content-muted mb-4">
+              에뮬레이터에서 추가/수정된 파일을 서버에 동기화합니다.
+              <br />
+              <span className="text-amber-400">참고: 삭제는 반영되지 않습니다. 삭제는 관리 패널에서 하세요.</span>
+            </p>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="관리자 비밀번호"
+              className="w-full px-3.5 py-2.5 bg-surface-hover border border-edge rounded-lg text-content text-sm outline-none focus:border-primary placeholder:text-content-muted"
+              onKeyDown={(e) => e.key === "Enter" && handleSync()}
+              autoFocus
+            />
+            {syncStatus === "error" && (
+              <div className="mt-4 px-4 py-3 rounded-lg text-sm bg-error/10 text-error-light border border-error/20">
+                {statusMessage}
+              </div>
+            )}
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={handleCancelSyncModal}
+                disabled={syncStatus === "syncing"}
+                className="flex-1 px-4 py-2.5 text-sm font-medium rounded-lg bg-surface-hover text-content border border-edge hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSync}
+                disabled={!password || syncStatus === "syncing"}
+                className="flex-1 px-4 py-2.5 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {syncStatus === "syncing" ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    동기화 중...
+                  </span>
+                ) : "동기화"}
               </button>
             </div>
           </div>
