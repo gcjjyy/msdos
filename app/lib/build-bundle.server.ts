@@ -2,7 +2,7 @@
 // This module is used by the upload API to rebuild the bundle after file changes
 
 import { join, relative, dirname } from "path";
-import { readdir, stat, readFile, writeFile, mkdir, rm } from "fs/promises";
+import { readdir, stat, readFile, writeFile, mkdir, rm, symlink } from "fs/promises";
 import { zipSync, type Zippable } from "fflate";
 
 const DOSBOX_CONF = `[sdl]
@@ -110,6 +110,16 @@ export async function buildBundle(): Promise<{ size: number }> {
 
   const stats = await stat(BUNDLE_FILE);
   console.log(`Created: ${BUNDLE_FILE} (${stats.size} bytes)`);
+
+  // build/client/bundle.jsdos 심볼릭 링크 생성 (프로덕션 서버용)
+  const BUILD_CLIENT_BUNDLE = join(process.cwd(), "build", "client", "bundle.jsdos");
+  try {
+    await rm(BUILD_CLIENT_BUNDLE, { force: true });
+    await symlink(BUNDLE_FILE, BUILD_CLIENT_BUNDLE);
+    console.log(`Symlink created: ${BUILD_CLIENT_BUNDLE} -> ${BUNDLE_FILE}`);
+  } catch {
+    // build/client 폴더가 없으면 무시 (아직 빌드 안 된 경우)
+  }
 
   return { size: stats.size };
 }
