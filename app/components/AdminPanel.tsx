@@ -10,6 +10,7 @@ interface PendingFolder {
   files: File[];
   valid: boolean;
   errorCount: number;
+  targetPath: string | null; // 업로드 대상 경로 (null이면 루트)
 }
 
 type ApplyStatus = "idle" | "applying" | "success" | "error";
@@ -177,11 +178,32 @@ export default function AdminPanel() {
     const firstPath = files[0].webkitRelativePath;
     const folderName = firstPath.split("/")[0];
 
-    if (
-      pendingAdditions.some((f) => f.name.toUpperCase() === folderName.toUpperCase()) ||
-      tree.some((f) => f.name.toUpperCase() === folderName.toUpperCase())
-    ) {
-      alert(`폴더 "${folderName}"이(가) 이미 존재합니다.`);
+    // 대상 경로 (현재 선택된 폴더 또는 루트)
+    const targetPath = currentPath;
+    const fullTargetPath = targetPath ? `${targetPath}/${folderName}` : folderName;
+
+    // 중복 확인: 대상 경로 내에서 같은 이름의 폴더가 있는지 확인
+    const checkDuplicateInTree = (items: FolderItem[], pathParts: string[]): boolean => {
+      if (pathParts.length === 0) {
+        return items.some((f) => f.name.toUpperCase() === folderName.toUpperCase());
+      }
+      const [first, ...rest] = pathParts;
+      const folder = items.find((f) => f.name.toUpperCase() === first.toUpperCase() && f.type === "folder");
+      if (!folder || !folder.children) return false;
+      return checkDuplicateInTree(folder.children, rest);
+    };
+
+    const pathParts = targetPath ? targetPath.split("/") : [];
+    const existsInTree = checkDuplicateInTree(tree, pathParts);
+    const existsInPending = pendingAdditions.some(
+      (f) => {
+        const pendingFullPath = f.targetPath ? `${f.targetPath}/${f.name}` : f.name;
+        return pendingFullPath.toUpperCase() === fullTargetPath.toUpperCase();
+      }
+    );
+
+    if (existsInTree || existsInPending) {
+      alert(`폴더 "${fullTargetPath}"이(가) 이미 존재합니다.`);
       e.target.value = "";
       return;
     }
@@ -189,7 +211,7 @@ export default function AdminPanel() {
     const validation = validateFolder(folderName, files);
     setPendingAdditions((prev) => [
       ...prev,
-      { name: folderName, files, valid: validation.valid, errorCount: validation.errors.length },
+      { name: folderName, files, valid: validation.valid, errorCount: validation.errors.length, targetPath },
     ]);
     e.target.value = "";
   };
@@ -218,7 +240,11 @@ export default function AdminPanel() {
 
       for (const folder of pendingAdditions) {
         for (const file of folder.files) {
-          formData.append(`file:${file.webkitRelativePath}`, file);
+          // targetPath가 있으면 경로 앞에 추가
+          const filePath = folder.targetPath
+            ? `${folder.targetPath}/${file.webkitRelativePath}`
+            : file.webkitRelativePath;
+          formData.append(`file:${filePath}`, file);
         }
       }
 
@@ -336,8 +362,12 @@ export default function AdminPanel() {
           <button
             onClick={handleAddFolder}
             className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-surface-hover text-content border border-edge hover:bg-zinc-700 transition-colors"
+            title={currentPath ? `${currentPath}/ 하위에 추가` : "루트에 추가"}
           >
             + 폴더 추가
+            {currentPath && (
+              <span className="text-xs text-primary">→ {currentPath}/</span>
+            )}
           </button>
           {hasSelection && (
             <button
@@ -396,28 +426,33 @@ export default function AdminPanel() {
               <span className="text-sm font-medium text-primary">추가 예정</span>
             </div>
             <div className="p-4 space-y-2">
-              {pendingAdditions.map((folder, index) => (
-                <div
-                  key={folder.name}
-                  className={`flex items-center justify-between p-3 rounded-lg bg-surface-hover ${
-                    !folder.valid ? "border border-error" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium text-content">{folder.name}</span>
-                    <span className="text-xs text-content-muted">{folder.files.length} 파일</span>
-                    {!folder.valid && (
-                      <span className="text-xs text-error-light">{folder.errorCount}개 오류</span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleRemoveAddition(index)}
-                    className="px-3 py-1.5 text-xs rounded-lg bg-surface-elevated text-content border border-edge hover:bg-zinc-700 transition-colors"
+              {pendingAdditions.map((folder, index) => {
+                const displayPath = folder.targetPath
+                  ? `${folder.targetPath}/${folder.name}`
+                  : folder.name;
+                return (
+                  <div
+                    key={`${folder.targetPath || "root"}-${folder.name}`}
+                    className={`flex items-center justify-between p-3 rounded-lg bg-surface-hover ${
+                      !folder.valid ? "border border-error" : ""
+                    }`}
                   >
-                    제거
-                  </button>
-                </div>
-              ))}
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-content">{displayPath}</span>
+                      <span className="text-xs text-content-muted">{folder.files.length} 파일</span>
+                      {!folder.valid && (
+                        <span className="text-xs text-error-light">{folder.errorCount}개 오류</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleRemoveAddition(index)}
+                      className="px-3 py-1.5 text-xs rounded-lg bg-surface-elevated text-content border border-edge hover:bg-zinc-700 transition-colors"
+                    >
+                      제거
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
